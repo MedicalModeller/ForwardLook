@@ -73,6 +73,19 @@
     border-radius:10px;
     box-shadow:0 1px 3px rgba(27,36,48,.06);
   }
+  .help-note{
+    background:#fbf1de;
+    border:1px solid var(--brass-light);
+    border-radius:10px;
+    padding:14px 18px;
+    margin-bottom:20px;
+  }
+  .help-note p{
+    margin:0;
+    font-size:.86rem;
+    color:#5c4c22;
+    line-height:1.5;
+  }
   .paste-panel{ padding:18px 20px; margin-bottom:22px; }
   .paste-panel h2{
     font-family:Georgia,serif; font-weight:400; font-size:1.05rem;
@@ -255,6 +268,10 @@
 
 <div class="wrap">
 
+  <div class="help-note">
+    <p>This shows the forward-look rota, but it isn't linked to your own RotaCentral account — nothing you do here signs you up for anything. If you're able to help with one of the shifts below, please go to your RotaCentral self service page to select shifts.</p>
+  </div>
+
   <div class="panel paste-panel" id="pastePanel">
     <h2>Load the forward look</h2>
     <p>Copy the text from the password-protected forward-look page (select a stretch of days, copy, paste below) and hit Generate. Duty Manager rows are ignored automatically, and nobody's name is shown — only whether a slot still needs someone.</p>
@@ -295,6 +312,9 @@ const dateLineRe = /^\w{3} \d{2}\/\d{2}\/\d{4}$/;
 const weekdayRe = /^(Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday)$/;
 const timeRangeRe = /^\d{2}:\d{2}-\d{2}:\d{2}$/;
 const roleTokens = new Set(['Room Steward','Shop/Tickets','Duty Manager']);
+// a status line sits on its own line right after a name, e.g. "Confirmed",
+// "Reminded  (1 day)", "Accepted" — read past it but never stored or shown
+const statusLineRe = /^(Confirmed|Reminded|Accepted|Declined|Cancelled)\b/i;
 
 function isControlLine(line){
   return dateLineRe.test(line) || weekdayRe.test(line) || timeRangeRe.test(line) || roleTokens.has(line);
@@ -305,7 +325,9 @@ function isControlLine(line){
 // two real sessions, each a run of "Room Steward" / "Shop/Tickets" role
 // lines. A role line immediately followed by another control line (rather
 // than a name) means that slot is vacant — no fixed slot count is assumed,
-// so this copes with the roster changing shape over time.
+// so this copes with the roster changing shape over time. A filled slot's
+// name may optionally be followed by its own status line (Confirmed,
+// Reminded, Accepted, etc.) — that's read past and discarded, never shown.
 function parseVacancyText(raw){
   const lines = raw.replace(/\r/g,'').split('\n').map(l => l.trim()).filter(l => l.length > 0);
   let i = 0;
@@ -318,12 +340,16 @@ function parseVacancyText(raw){
 
     const day = { dateLine, weekday, sessions: [] };
 
-    // Duty Manager block — time range, role line, optional name — all skipped
+    // Duty Manager block — time range, role line, optional name (+ optional
+    // status line) — all skipped, never shown on this board
     if(i < lines.length && timeRangeRe.test(lines[i])){
       i++;
       if(lines[i] === 'Duty Manager'){
         i++;
-        if(i < lines.length && !isControlLine(lines[i])) i++;
+        if(i < lines.length && !isControlLine(lines[i])){
+          i++;
+          if(i < lines.length && statusLineRe.test(lines[i])) i++;
+        }
       }
     }
 
@@ -336,6 +362,7 @@ function parseVacancyText(raw){
         if(i < lines.length && !isControlLine(lines[i])){
           i++; // the name — read only to advance the cursor, never stored or shown
           filled = true;
+          if(i < lines.length && statusLineRe.test(lines[i])) i++; // optional status line, discarded
         }
         slots.push({ role, filled });
       }
