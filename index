@@ -1,0 +1,704 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>House of Secrets — Volunteers Needed</title>
+<style>
+  :root{
+    --ink:#1B2430;
+    --ink-2:#28334a;
+    --brass:#A6803D;
+    --brass-light:#D8C08A;
+    --parchment:#F3ECDD;
+    --parchment-2:#EAE0C8;
+    --confirmed:#4C6B4F;
+    --confirmed-bg:#e4ebe1;
+    --vacant:#C2185B;
+    --vacant-bg:#fbe3ee;
+    --ink-text:#241E17;
+    font-size:16px;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--parchment);
+    color:var(--ink-text);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  .header{
+    background:var(--ink);
+    color:var(--parchment);
+    padding:22px 28px 20px;
+    border-bottom:4px solid var(--brass);
+    position:relative;
+    overflow:hidden;
+  }
+  .header::after{
+    content:"";
+    position:absolute;
+    right:-40px; top:-40px;
+    width:160px; height:160px;
+    border:1px solid rgba(216,192,138,0.25);
+    border-radius:50%;
+  }
+  .eyebrow{
+    font-family:Georgia,"Times New Roman",serif;
+    letter-spacing:.12em;
+    text-transform:uppercase;
+    font-size:.72rem;
+    color:var(--brass-light);
+    margin:0 0 4px;
+  }
+  h1{
+    font-family:Georgia,"Times New Roman",serif;
+    font-weight:400;
+    font-size:1.9rem;
+    margin:0;
+  }
+  .header p.sub{
+    margin:8px 0 0;
+    font-size:.92rem;
+    color:var(--brass-light);
+    max-width:640px;
+  }
+  .wrap{
+    max-width:1200px;
+    margin:0 auto;
+    padding:24px 28px 60px;
+  }
+  .panel{
+    background:#fff;
+    border:1px solid var(--parchment-2);
+    border-radius:10px;
+    box-shadow:0 1px 3px rgba(27,36,48,.06);
+  }
+  .paste-panel{ padding:18px 20px; margin-bottom:22px; }
+  .paste-panel h2{
+    font-family:Georgia,serif; font-weight:400; font-size:1.05rem;
+    margin:0 0 4px; color:var(--ink);
+  }
+  .paste-panel p{ margin:0 0 12px; font-size:.86rem; color:#6b6152; }
+  textarea{
+    width:100%; min-height:140px; resize:vertical;
+    border:1px solid #d8cdb3; border-radius:8px; padding:10px 12px;
+    font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:.8rem;
+    color:var(--ink-text); background:#fdfbf5;
+  }
+  textarea:focus{outline:2px solid var(--brass); outline-offset:1px;}
+  .row{display:flex; gap:10px; align-items:center; margin-top:12px; flex-wrap:wrap;}
+  button{
+    font-family:inherit; cursor:pointer; border-radius:7px; border:1px solid transparent;
+    padding:9px 16px; font-size:.85rem; font-weight:600;
+  }
+  .btn-primary{background:var(--ink); color:var(--parchment);}
+  .btn-primary:hover{background:var(--ink-2);}
+  .btn-ghost{background:transparent; color:var(--ink); border-color:#d8cdb3;}
+  .btn-ghost:hover{background:var(--parchment-2);}
+  .parse-msg{font-size:.82rem; color:var(--confirmed); font-weight:600;}
+  .parse-msg.err{color:var(--vacant);}
+
+  .summary-banner{
+    display:none;
+    background:var(--vacant-bg);
+    border:1px solid #e6bcb6;
+    border-radius:10px;
+    padding:16px 20px;
+    margin-bottom:22px;
+    text-align:center;
+  }
+  .summary-banner.all-covered{background:var(--confirmed-bg); border-color:#c7d6c3;}
+  .summary-banner .big{
+    font-family:Georgia,serif;
+    font-size:2rem;
+    color:var(--vacant);
+    font-weight:700;
+    line-height:1;
+  }
+  .summary-banner.all-covered .big{color:var(--confirmed);}
+  .summary-banner .label{
+    font-size:.85rem; color:#6b6152; margin-top:4px; font-weight:600;
+  }
+
+  .week-scroll{
+    overflow-x:auto;
+    padding-bottom:6px;
+  }
+  .days-grid{
+    display:grid;
+    grid-template-columns:repeat(7, minmax(140px, 1fr));
+    gap:12px;
+    min-width:1020px;
+  }
+  @media (min-width:900px){
+    .days-grid{min-width:0;}
+  }
+  .weekday-heading{
+    font-family:Georgia,serif;
+    font-size:.82rem;
+    color:var(--ink);
+    text-align:center;
+    padding-bottom:6px;
+    border-bottom:2px solid var(--brass-light);
+  }
+  .day-card{ padding:14px 16px 16px; }
+  .day-card.closed{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    min-height:80px;
+    background:var(--parchment-2);
+    box-shadow:none;
+  }
+  .day-card.closed .closed-label{
+    font-family:Georgia,serif;
+    font-size:.85rem;
+    color:#8a7f6a;
+    font-style:italic;
+  }
+  .day-card.no-data{
+    background:transparent;
+    border:1px dashed #e6dcc4;
+    box-shadow:none;
+  }
+  .day-card.fully-covered{ opacity:.75; }
+  .day-date{
+    font-family:Georgia,serif;
+    font-size:1.05rem;
+    color:var(--ink);
+    margin:0 0 2px;
+  }
+  .day-weekday{
+    font-size:.76rem;
+    color:#8a7f6a;
+    font-weight:600;
+    text-transform:uppercase;
+    letter-spacing:.04em;
+    margin:0 0 10px;
+    padding-bottom:8px;
+    border-bottom:2px solid var(--brass-light);
+  }
+  .session-block{
+    padding:8px 0;
+    border-top:1px solid #f0e9d8;
+  }
+  .session-block:first-of-type{border-top:none; padding-top:0;}
+  .session-time{
+    font-size:.72rem;
+    font-weight:700;
+    letter-spacing:.05em;
+    text-transform:uppercase;
+    color:#a6803d;
+    margin-bottom:6px;
+  }
+  .role-row{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:8px;
+    padding:5px 8px;
+    border-radius:6px;
+    margin-bottom:5px;
+    font-size:.83rem;
+  }
+  .role-row:last-child{margin-bottom:0;}
+  .role-row .role-label{font-weight:600; color:var(--ink-text);}
+  .role-row .status{
+    font-weight:700;
+    font-size:.76rem;
+    padding:2px 9px;
+    border-radius:20px;
+    white-space:nowrap;
+  }
+  .role-row.vacant{background:var(--vacant-bg);}
+  .role-row.vacant .status{background:var(--vacant); color:#fff;}
+  .role-row.covered{background:var(--confirmed-bg);}
+  .role-row.covered .status{background:var(--confirmed); color:#fff;}
+
+  .footer-actions{margin-top:24px; display:flex; gap:10px; align-items:center; flex-wrap:wrap;}
+  .link-msg{font-size:.82rem; color:var(--confirmed); font-weight:600;}
+  .empty-state{
+    grid-column:1 / -1;
+    padding:40px 20px; text-align:center; color:#a89b7f; font-style:italic;
+  }
+  .shared-note{
+    font-size:.82rem;
+    color:#6b6152;
+    margin:-8px 0 20px;
+    display:none;
+  }
+  .shared-note a{color:var(--ink); font-weight:600;}
+
+  body.exporting .paste-panel, body.exporting .footer-actions{display:none !important;}
+  body.exporting .header{background:var(--ink) !important;}
+
+  @page{ size: A4 landscape; margin: 8mm; }
+  @media print{
+    :root{font-size:11px;}
+    .paste-panel, .footer-actions{display:none;}
+    .header{padding:8px 10px 10px;}
+    .wrap{padding:8px 10px; max-width:none;}
+    .days-grid{grid-template-columns:repeat(7, 1fr); min-width:0;}
+    .weekday-heading{font-size:.68rem;}
+    .day-card{break-inside:avoid; padding:8px 10px 10px;}
+    body{background:#fff;}
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <p class="eyebrow">Trent Park House of Secrets</p>
+  <h1>Volunteers Needed</h1>
+  <p class="sub">Where we're short — no names shown for shifts that are already covered, just where a hand is needed.</p>
+</div>
+
+<div class="wrap">
+
+  <div class="panel paste-panel" id="pastePanel">
+    <h2>Load the forward look</h2>
+    <p>Copy the text from the password-protected forward-look page (select a stretch of days, copy, paste below) and hit Generate. Duty Manager rows are ignored automatically, and nobody's name is shown — only whether a slot still needs someone.</p>
+    <textarea id="pasteBox" placeholder="Paste the forward-look text here…"></textarea>
+    <div class="row">
+      <button class="btn-primary" onclick="handleGenerate()">Generate vacancy board</button>
+      <button class="btn-ghost" onclick="clearAll()">Clear everything</button>
+      <span id="parseMsg" class="parse-msg"></span>
+    </div>
+  </div>
+
+  <p class="shared-note" id="sharedNote">Showing a shared snapshot from <span id="sharedNoteDate"></span> — it won't update on its own. <a href="#" onclick="showGenerator(); return false;">Load a fresh one</a></p>
+
+  <div class="summary-banner" id="summaryBanner">
+    <div class="big" id="summaryBig"></div>
+    <div class="label" id="summaryLabel"></div>
+  </div>
+
+  <div class="week-scroll">
+    <div class="days-grid" id="daysGrid">
+      <div class="empty-state">Paste the forward look above to see where volunteers are needed.</div>
+    </div>
+  </div>
+
+  <div class="footer-actions">
+    <button class="btn-primary" onclick="window.print()">Print vacancy board</button>
+    <button id="saveBtn" class="btn-ghost" onclick="saveAsPdf()">Save as PDF</button>
+    <button id="linkBtn" class="btn-ghost" onclick="copyShareLink()" style="display:none;">Copy shareable link</button>
+    <span id="linkMsg" class="link-msg"></span>
+  </div>
+
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script>
+const dateLineRe = /^\w{3} \d{2}\/\d{2}\/\d{4}$/;
+const weekdayRe = /^(Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday)$/;
+const timeRangeRe = /^\d{2}:\d{2}-\d{2}:\d{2}$/;
+const roleTokens = new Set(['Room Steward','Shop/Tickets','Duty Manager']);
+
+function isControlLine(line){
+  return dateLineRe.test(line) || weekdayRe.test(line) || timeRangeRe.test(line) || roleTokens.has(line);
+}
+
+// Parses the forward-look export. Each day is: a date line, a weekday line,
+// a Duty Manager block (always skipped — never shown on this board), then
+// two real sessions, each a run of "Room Steward" / "Shop/Tickets" role
+// lines. A role line immediately followed by another control line (rather
+// than a name) means that slot is vacant — no fixed slot count is assumed,
+// so this copes with the roster changing shape over time.
+function parseVacancyText(raw){
+  const lines = raw.replace(/\r/g,'').split('\n').map(l => l.trim()).filter(l => l.length > 0);
+  let i = 0;
+  const days = [];
+
+  while(i < lines.length){
+    if(!dateLineRe.test(lines[i])){ i++; continue; }
+    const dateLine = lines[i++];
+    const weekday = (i < lines.length && weekdayRe.test(lines[i])) ? lines[i++] : '';
+
+    const day = { dateLine, weekday, sessions: [] };
+
+    // Duty Manager block — time range, role line, optional name — all skipped
+    if(i < lines.length && timeRangeRe.test(lines[i])){
+      i++;
+      if(lines[i] === 'Duty Manager'){
+        i++;
+        if(i < lines.length && !isControlLine(lines[i])) i++;
+      }
+    }
+
+    while(i < lines.length && timeRangeRe.test(lines[i])){
+      const time = lines[i++];
+      const slots = [];
+      while(i < lines.length && (lines[i] === 'Room Steward' || lines[i] === 'Shop/Tickets')){
+        const role = lines[i++];
+        let filled = false;
+        if(i < lines.length && !isControlLine(lines[i])){
+          i++; // the name — read only to advance the cursor, never stored or shown
+          filled = true;
+        }
+        slots.push({ role, filled });
+      }
+      day.sessions.push({ time, slots });
+      if(i < lines.length && dateLineRe.test(lines[i])) break;
+    }
+
+    days.push(day);
+  }
+  return days;
+}
+
+function sessionLabel(time){
+  const startHour = parseInt(time.split(':')[0], 10);
+  return startHour < 13 ? 'Morning' : 'Afternoon';
+}
+
+
+let lastDays = null;
+let lastGeneratedAt = null;
+
+function handleGenerate(){
+  const raw = document.getElementById('pasteBox').value;
+  const msgEl = document.getElementById('parseMsg');
+  if(!raw.trim()){
+    msgEl.textContent = 'Paste the forward-look text first.';
+    msgEl.classList.add('err');
+    return;
+  }
+  let days;
+  try{
+    days = parseVacancyText(raw);
+  }catch(e){
+    msgEl.textContent = 'Could not read that text — check it was copied in full and try again.';
+    msgEl.classList.add('err');
+    return;
+  }
+  if(!days.length){
+    msgEl.textContent = 'No days found — check the pasted text matches the forward-look format.';
+    msgEl.classList.add('err');
+    return;
+  }
+  msgEl.classList.remove('err');
+  msgEl.textContent = 'Generated ' + days.length + ' day' + (days.length===1?'':'s') + '.';
+  document.getElementById('sharedNote').style.display = 'none';
+  renderBoard(days, new Date().toISOString());
+}
+
+function clearAll(){
+  document.getElementById('pasteBox').value = '';
+  document.getElementById('parseMsg').textContent = '';
+  document.getElementById('parseMsg').classList.remove('err');
+  document.getElementById('daysGrid').innerHTML = '<div class="empty-state">Paste the forward look above to see where volunteers are needed.</div>';
+  document.getElementById('summaryBanner').style.display = 'none';
+  document.getElementById('linkBtn').style.display = 'none';
+  document.getElementById('linkMsg').textContent = '';
+  lastDays = null;
+  lastGeneratedAt = null;
+}
+
+const WEEKDAY_NAMES = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
+
+// dd/mm/yyyy is embedded in every date line (e.g. "Tue 01/09/2026")
+function dateFromDateLine(dateLine){
+  const m = dateLine.match(/(\d{2})\/(\d{2})\/(\d{4})/);
+  if(!m) return null;
+  return new Date(parseInt(m[3],10), parseInt(m[2],10)-1, parseInt(m[1],10));
+}
+// Monday-based weekday index: 0 = Monday ... 6 = Sunday
+function mondayIndex(date){ return (date.getDay() + 6) % 7; }
+function mondayOf(date){
+  const d = new Date(date);
+  d.setDate(d.getDate() - mondayIndex(d));
+  return d;
+}
+function weekKeyOf(date){
+  const m = mondayOf(date);
+  return m.getFullYear() + '-' + String(m.getMonth()+1).padStart(2,'0') + '-' + String(m.getDate()).padStart(2,'0');
+}
+
+function buildDayCard(day){
+  const card = document.createElement('div');
+  card.className = 'panel day-card';
+
+  const dateEl = document.createElement('p');
+  dateEl.className = 'day-date';
+  dateEl.textContent = day.dateLine.replace(/^\w{3}\s+/, '');
+  const weekdayEl = document.createElement('p');
+  weekdayEl.className = 'day-weekday';
+  weekdayEl.textContent = day.weekday || '';
+  card.appendChild(dateEl);
+  card.appendChild(weekdayEl);
+
+  let dayVacant = 0;
+  let sessionsShown = 0;
+
+  day.sessions.forEach(session => {
+    const roomSteward = session.slots.filter(s => s.role === 'Room Steward');
+    const shopTickets = session.slots.filter(s => s.role === 'Shop/Tickets');
+    const rsVacant = roomSteward.filter(s => !s.filled).length;
+    const stVacant = shopTickets.length ? !shopTickets[0].filled : false;
+
+    dayVacant += rsVacant + (stVacant ? 1 : 0);
+    if(rsVacant === 0 && !stVacant) return; // fully covered session — nothing to show
+
+    sessionsShown++;
+    const block = document.createElement('div');
+    block.className = 'session-block';
+
+    const timeEl = document.createElement('p');
+    timeEl.className = 'session-time';
+    timeEl.textContent = sessionLabel(session.time) + ' · ' + session.time;
+    block.appendChild(timeEl);
+
+    if(rsVacant > 0){
+      const rsRow = document.createElement('div');
+      rsRow.className = 'role-row vacant';
+      rsRow.innerHTML = '<span class="role-label">Room Steward</span>' +
+        '<span class="status">' + rsVacant + ' NEEDED</span>';
+      block.appendChild(rsRow);
+    }
+
+    if(stVacant){
+      const stRow = document.createElement('div');
+      stRow.className = 'role-row vacant';
+      stRow.innerHTML = '<span class="role-label">Shop / Tickets</span>' +
+        '<span class="status">1 NEEDED</span>';
+      block.appendChild(stRow);
+    }
+
+    card.appendChild(block);
+  });
+
+  if(!sessionsShown){
+    card.classList.add('fully-covered');
+    const okRow = document.createElement('div');
+    okRow.className = 'role-row covered';
+    okRow.innerHTML = '<span class="role-label">All shifts covered</span><span class="status">\u2713</span>';
+    card.appendChild(okRow);
+  }
+
+  return { card, dayVacant };
+}
+
+function buildClosedCard(){
+  const card = document.createElement('div');
+  card.className = 'panel day-card closed';
+  const label = document.createElement('span');
+  label.className = 'closed-label';
+  label.textContent = 'Closed';
+  card.appendChild(label);
+  return card;
+}
+
+function renderBoard(days, generatedAt){
+  lastDays = days;
+  lastGeneratedAt = generatedAt || new Date().toISOString();
+
+  const grid = document.getElementById('daysGrid');
+  grid.innerHTML = '';
+  let totalVacant = 0;
+
+  // group the parsed days into calendar weeks (Monday-start), so a date
+  // range that begins mid-week still lines up under the right weekday —
+  // e.g. two Tuesdays a week apart land in the same column, one row apart
+  const weekMap = new Map(); // weekKey -> array of 7 slots (index 0 = Monday)
+  const weekOrder = [];
+
+  days.forEach(day => {
+    const dateObj = dateFromDateLine(day.dateLine);
+    if(!dateObj) return;
+    const idx = mondayIndex(dateObj);
+    if(idx === 0) return; // Monday is always shown as Closed, never from parsed data
+    const key = weekKeyOf(dateObj);
+    if(!weekMap.has(key)){
+      weekMap.set(key, new Array(7).fill(null));
+      weekOrder.push({ key, monday: mondayOf(dateObj) });
+    }
+    weekMap.get(key)[idx] = day;
+  });
+
+  weekOrder.sort((a,b) => a.monday - b.monday);
+
+  // heading row
+  WEEKDAY_NAMES.forEach((name, i) => {
+    const h = document.createElement('div');
+    h.className = 'weekday-heading';
+    h.textContent = name.slice(0,3);
+    h.style.gridColumn = String(i+1);
+    h.style.gridRow = '1';
+    grid.appendChild(h);
+  });
+
+  weekOrder.forEach((week, rowIdx) => {
+    const rowNum = rowIdx + 2; // row 1 is the heading
+    const slots = weekMap.get(week.key);
+
+    for(let col = 0; col < 7; col++){
+      let cell;
+      if(col === 0){
+        cell = buildClosedCard();
+      } else if(slots[col]){
+        const { card, dayVacant } = buildDayCard(slots[col]);
+        cell = card;
+        totalVacant += dayVacant;
+      } else {
+        cell = document.createElement('div');
+        cell.className = 'panel day-card no-data';
+      }
+      cell.style.gridColumn = String(col+1);
+      cell.style.gridRow = String(rowNum);
+      grid.appendChild(cell);
+    }
+  });
+
+  if(!weekOrder.length){
+    const empty = document.createElement('div');
+    empty.className = 'empty-state';
+    empty.textContent = 'No recognisable days found in that text.';
+    grid.appendChild(empty);
+  }
+
+
+  const banner = document.getElementById('summaryBanner');
+  const big = document.getElementById('summaryBig');
+  const label = document.getElementById('summaryLabel');
+  banner.style.display = 'block';
+  banner.classList.toggle('all-covered', totalVacant === 0);
+  if(totalVacant === 0){
+    big.textContent = '\u2713';
+    label.textContent = 'Every shift across this period is fully staffed — thank you!';
+  } else {
+    big.textContent = totalVacant;
+    label.textContent = 'vacant shift' + (totalVacant===1?'':'s') + ' across this period — could you fill one?';
+  }
+
+  document.getElementById('linkBtn').style.display = 'inline-block';
+  document.getElementById('linkMsg').textContent = '';
+}
+
+// ---- shareable link: the board's data (never any names) is packed into
+// the URL itself, so opening the link renders the same board with no
+// paste step and no server needed ----
+// ---- shareable link: only aggregate counts are packed into the URL (never
+// any names, never even individual slot detail) as a plain delimited text
+// string — no base64, just ordinary URL query parameters, so there's
+// nothing here that resembles an obfuscation technique.
+// Per day: "dateLine^weekday^time,rsFilled,rsTotal,stCode;time,rsFilled,rsTotal,stCode"
+// stCode: 1 = Shop/Tickets filled, 0 = vacant, 2 = no Shop/Tickets slot that session
+// Days are joined with "|".
+function daysToParam(days){
+  return days.map(d => {
+    const sessions = d.sessions.map(s => {
+      const rs = s.slots.filter(x => x.role === 'Room Steward');
+      const st = s.slots.filter(x => x.role === 'Shop/Tickets');
+      const rsFilled = rs.filter(x => x.filled).length;
+      const stCode = st.length ? (st[0].filled ? 1 : 0) : 2;
+      return [s.time, rsFilled, rs.length, stCode].join(',');
+    }).join(';');
+    return [d.dateLine, d.weekday, sessions].join('^');
+  }).join('|');
+}
+function daysFromParam(str){
+  return str.split('|').map(dayStr => {
+    const [dateLine, weekday, sessionsStr] = dayStr.split('^');
+    const sessions = (sessionsStr || '').split(';').filter(Boolean).map(sessionStr => {
+      const [time, rsFilledStr, rsTotalStr, stCodeStr] = sessionStr.split(',');
+      const rsFilled = parseInt(rsFilledStr,10), rsTotal = parseInt(rsTotalStr,10), stCode = parseInt(stCodeStr,10);
+      const slots = [];
+      for(let i=0;i<rsTotal;i++) slots.push({ role:'Room Steward', filled: i < rsFilled });
+      if(stCode !== 2) slots.push({ role:'Shop/Tickets', filled: stCode === 1 });
+      return { time, slots };
+    });
+    return { dateLine, weekday, sessions };
+  });
+}
+
+function copyShareLink(){
+  if(!lastDays) return;
+  const params = new URLSearchParams();
+  params.set('t', lastGeneratedAt);
+  params.set('d', daysToParam(lastDays));
+  const url = location.origin + location.pathname + '?' + params.toString();
+  const msgEl = document.getElementById('linkMsg');
+  const showCopied = () => { msgEl.textContent = 'Link copied — paste it into your email.'; };
+  const showFallback = () => {
+    window.prompt('Copy this link:', url);
+  };
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(url).then(showCopied).catch(showFallback);
+  } else {
+    showFallback();
+  }
+}
+
+function showGenerator(){
+  document.getElementById('pastePanel').style.display = 'block';
+  document.getElementById('sharedNote').style.display = 'none';
+  history.replaceState(null, '', location.pathname);
+}
+
+function formatTimestamp(iso){
+  try{
+    const d = new Date(iso);
+    return d.toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric' }) +
+      ' at ' + d.toLocaleTimeString('en-GB', { hour:'2-digit', minute:'2-digit' });
+  }catch(e){ return iso; }
+}
+
+// on load, if the URL carries a shared snapshot, render it directly and hide the paste tool
+document.addEventListener('DOMContentLoaded', () => {
+  const params = new URLSearchParams(location.search);
+  const data = params.get('d');
+  if(data){
+    try{
+      const days = daysFromParam(data);
+      const generatedAt = params.get('t');
+      document.getElementById('pastePanel').style.display = 'none';
+      const note = document.getElementById('sharedNote');
+      note.style.display = 'block';
+      document.getElementById('sharedNoteDate').textContent = formatTimestamp(generatedAt);
+      renderBoard(days, generatedAt);
+      document.getElementById('linkBtn').style.display = 'none'; // sharing a shared snapshot just reshares the same link
+    }catch(e){
+      // malformed link — fall back to the normal paste tool silently
+    }
+  }
+});
+
+async function saveAsPdf(){
+  const btn = document.getElementById('saveBtn');
+  const originalLabel = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = 'Preparing PDF…';
+  document.body.classList.add('exporting');
+  try{
+    const target = document.querySelector('.wrap');
+    const canvas = await html2canvas(target, { scale: 2, backgroundColor: '#F3ECDD' });
+    const imgData = canvas.toDataURL('image/png');
+    const { jsPDF } = window.jspdf;
+    const pdf = new jsPDF('l', 'mm', 'a4');
+    const pageWidth = pdf.internal.pageSize.getWidth();
+    const pageHeight = pdf.internal.pageSize.getHeight();
+    const imgWidth = pageWidth;
+    const imgHeight = (canvas.height * imgWidth) / canvas.width;
+    let heightLeft = imgHeight, position = 0;
+    pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+    heightLeft -= pageHeight;
+    while(heightLeft > 0){
+      position = heightLeft - imgHeight;
+      pdf.addPage();
+      pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+      heightLeft -= pageHeight;
+    }
+    pdf.save('house-of-secrets-volunteers-needed.pdf');
+  }catch(e){
+    alert('Could not generate the PDF — try Print instead.');
+  }
+  document.body.classList.remove('exporting');
+  btn.disabled = false;
+  btn.textContent = originalLabel;
+}
+</script>
+
+</body>
+</html>
