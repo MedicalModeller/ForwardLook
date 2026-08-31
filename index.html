@@ -248,6 +248,7 @@
     padding:8px 14px;
     border-radius:20px;
     border:1px solid transparent;
+    cursor:pointer;
     transition:background .12s, border-color .12s;
   }
   .feedback-icon{font-size:1rem; line-height:1;}
@@ -331,12 +332,13 @@
 
   <div class="feedback-row">
     <span class="feedback-label">Is this page useful?</span>
-    <a class="feedback-btn feedback-up" href="mailto:boyd.goldie+rota@gmail.com?subject=Volunteers%20Needed%20page%20feedback%3A%20thumbs%20up&body=This%20page%20is%20helpful.">
+    <button type="button" class="feedback-btn feedback-up" onclick="sendFeedback('up')">
       <span class="feedback-icon">&#128077;</span> Yes
-    </a>
-    <a class="feedback-btn feedback-down" href="mailto:boyd.goldie+rota@gmail.com?subject=Volunteers%20Needed%20page%20feedback%3A%20thumbs%20down&body=This%20page%20needs%20work.%20Here%27s%20why%3A%20">
+    </button>
+    <button type="button" class="feedback-btn feedback-down" onclick="sendFeedback('down')">
       <span class="feedback-icon">&#128078;</span> No
-    </a>
+    </button>
+    <span id="feedbackMsg" class="link-msg"></span>
   </div>
 
 </div>
@@ -674,6 +676,38 @@ function daysFromParam(str){
     });
     return { dateLine, weekday, sessions };
   });
+}
+
+const FEEDBACK_EMAIL = 'boyd.goldie+rota@gmail.com';
+
+function sendFeedback(kind){
+  const subject = kind === 'up'
+    ? 'Volunteers Needed page feedback: thumbs up'
+    : 'Volunteers Needed page feedback: thumbs down';
+  const body = kind === 'up'
+    ? 'This page is helpful.'
+    : "This page needs work. Here's why: ";
+  const mailtoUrl = 'mailto:' + FEEDBACK_EMAIL +
+    '?subject=' + encodeURIComponent(subject) +
+    '&body=' + encodeURIComponent(body);
+
+  const msgEl = document.getElementById('feedbackMsg');
+  const plainText = 'To: ' + FEEDBACK_EMAIL + '\nSubject: ' + subject + '\n\n' + body;
+
+  // try to open the person's email app; not all browsers/devices have one
+  // registered as the default handler, so also copy the message as a
+  // fallback in case nothing visibly happens
+  window.location.href = mailtoUrl;
+
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(plainText).then(() => {
+      msgEl.textContent = "Opening your email app — if nothing happens, we've copied the message, paste it into an email to " + FEEDBACK_EMAIL + '.';
+    }).catch(() => {
+      msgEl.textContent = "If your email app didn't open, please email " + FEEDBACK_EMAIL + ' directly.';
+    });
+  } else {
+    msgEl.textContent = "If your email app didn't open, please email " + FEEDBACK_EMAIL + ' directly.';
+  }
 }
 
 function copyShareLink(){
